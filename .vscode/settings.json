@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\gusw1\\Desktop\\Code\\C++\\SDL2Test",
+            "binaryPath": "c:\\Users\\gusw1\\Desktop\\Code\\C++\\SDL2Test\\main",
+            "binaryArgs": []
+        }
+    ]
+}
