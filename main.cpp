@@ -1,17 +1,19 @@
 #include <iostream>
 #include <random>
 #include <functional>
+#include <cstdlib>
 
 #define SDL_MAIN_HANDLED
+#define particleToBeUsed sand
 
 #include "main.hpp"
 
-const int GRID_SIZE = 1000;
+const int GRID_SIZE = 256;
 Particle grid[GRID_SIZE][GRID_SIZE];
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
-const int SCREEN_WIDTH = GRID_SIZE;   
-const int SCREEN_HEIGHT = GRID_SIZE;
+const int SCREEN_WIDTH = GRID_SIZE * 4;   
+const int SCREEN_HEIGHT = GRID_SIZE * 4;
 const int UPDATE_INTERVAL_MS = 0;
 const bool debug = false;
 
@@ -56,6 +58,7 @@ int main(int argc, char* argv[]) {
     closeSDL();
     return 0;
 }
+
 bool initializeSDL() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
@@ -91,33 +94,35 @@ void renderGrid() {
     // Render each particle as a rectangle
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++) {
-            if (!grid[i][j].isNull) {
-                SDL_Rect particleRect;
-                particleRect.x = i * (SCREEN_WIDTH / GRID_SIZE);
-                particleRect.y = j * (SCREEN_HEIGHT / GRID_SIZE);
-                particleRect.w = SCREEN_WIDTH / GRID_SIZE;
-                particleRect.h = SCREEN_HEIGHT / GRID_SIZE;
+            if (grid[i][j].isNull) continue; 
+            SDL_Rect particleRect;
+            particleRect.x = i * (SCREEN_WIDTH / GRID_SIZE);
+            particleRect.y = j * (SCREEN_HEIGHT / GRID_SIZE);
+            particleRect.w = SCREEN_WIDTH / GRID_SIZE;
+            particleRect.h = SCREEN_HEIGHT / GRID_SIZE;
 
-                // Set color based on particle type
-                SDL_Color color;
-                switch (grid[i][j].type) {
-                    case none:
-                        color = { 0, 0, 0, 255 }; // Black for none
-                        break;
-                    case sand:
-                        color = { 255, 255, 0, 255 }; // Yellow for sand
-                        break;
-                    case water:
-                        color = { 0, 0, 255, 255 }; // Blue for water
-                        break;
-                    case steam:
-                        color = {33, 13, 2, 255};
-                        break;
-                }
-
-                SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-                SDL_RenderFillRect(renderer, &particleRect);
+            // Set color based on particle type
+            SDL_Color color;
+            switch (grid[i][j].type) {
+                case none:
+                    color = { 0, 0, 0, 255 }; // Black for none
+                    break;
+                case sand:
+                    color = { 255, 255, 0, 255 }; // Yellow for sand
+                    break;
+                case water:
+                    color = { 0, 0, 255, 255 }; // Blue for water
+                    break;
+                case steam:
+                    color = {33, 13, 2, 255};
+                    break;
+                case wall:
+                    color = {255, 0, 0, 255};
             }
+
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+            SDL_RenderFillRect(renderer, &particleRect);
+            
         }
     }
 
@@ -131,6 +136,14 @@ void initializeGrid() {
         for (int j = 0; j < GRID_SIZE; j++) {
             Coordinate pos(i, j);
             addParticle(pos, defaultParticle);
+        }
+    }
+    Particle part(water);
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++){
+            if (rand() % 12 == 0) { 
+                addParticle(Coordinate(i, j), part);
+            }
         }
     }
 }
@@ -153,9 +166,12 @@ void updateGrid() {
                 case steam:
                     pos2 = steamBehavior(pos);
                     break;
+                case wall:
+                    pos2 = pos;
+                    break;
             }
             if (grid[pos.x][pos.y].justMoved) continue;
-
+            if()
             moveParticle(pos, pos2, grid[pos.x][pos.y]);
             grid[pos2.x][pos2.y].justMoved = true;
         }
@@ -167,15 +183,16 @@ void updateGrid() {
             grid[i][j].justMoved = false;
         }
     }
-    Particle testParticle(water);
-    for(int i = 0; i < GRID_SIZE; i++){
-        grid[i][0] = testParticle;
-    }
-
+    Particle testParticle(particleToBeUsed);
+    addParticle(Coordinate(GRID_SIZE/2, 0), testParticle);
 }
 
 Coordinate sandBehavior(Coordinate pos) {
     Coordinate pos2 = pos;
+
+    if(pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].type == water){
+
+    }
 
     if(canMove(down, pos)){
         pos2.x = pos.x;
@@ -294,6 +311,17 @@ bool canMove(Direction direction, Coordinate pos){
             return(pos.x + 1 < GRID_SIZE && pos.y + 1 < GRID_SIZE && grid[pos.x + 1][pos.y + 1].isNull);
     }
     return 0;
+}
+
+bool canSwap(Direction direction, Coordinate){
+    switch(direction){
+        case down:
+            return(pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].type == water);
+        case downleft:
+            return(pos.y + 1 < GRID_SIZE && pos.x - 1 > 0 && grid[pos.x - 1][pos.y + 1].type == water);
+        case downleft:
+            return(pos.y + 1 < GRID_SIZE && pos.x + 1 > 0 && grid[pos.x + 1][pos.y + 1].type == water);
+    }
 }
 
 bool pointInsideRect(Coordinate point, SDL_Rect rectangle){

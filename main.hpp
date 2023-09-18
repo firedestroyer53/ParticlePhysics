@@ -8,7 +8,7 @@
 #include <SDL2/SDL.h>
 
 enum particleType {
-    none, sand, water, steam
+    none, sand, water, steam, wall
 };
 
 enum Direction{
@@ -28,6 +28,7 @@ struct Coordinate {
         x = 0;
         y = 0;
     }
+
 };
 
 struct Particle {
@@ -64,8 +65,6 @@ void initializeGrid();
 
 void updateGrid();
 
-void updateGridThreaded();
-
 void removeParticle(Coordinate pos);
 
 void addParticle(Coordinate pos, Particle particle);
@@ -79,6 +78,8 @@ Coordinate sandBehavior(Coordinate pos);
 Coordinate waterBehavior(Coordinate pos);
 
 Coordinate steamBehavior(Coordinate pos);
+
+Coordinate wallBehavior(Coordinate pos);
 
 bool canMove(Direction direction, Coordinate pos);
 
