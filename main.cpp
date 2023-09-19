@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 #define SDL_MAIN_HANDLED
-#define particleToBeUsed sand
+#define particleToBeUsed water
 
 #include "main.hpp"
 
@@ -138,10 +138,10 @@ void initializeGrid() {
             addParticle(pos, defaultParticle);
         }
     }
-    Particle part(water);
+    Particle part(sand);
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++){
-            if (rand() % 12 == 0) { 
+            if (rand() % 6 == 0) { 
                 addParticle(Coordinate(i, j), part);
             }
         }
@@ -171,7 +171,6 @@ void updateGrid() {
                     break;
             }
             if (grid[pos.x][pos.y].justMoved) continue;
-            if()
             moveParticle(pos, pos2, grid[pos.x][pos.y]);
             grid[pos2.x][pos2.y].justMoved = true;
         }
@@ -313,16 +312,16 @@ bool canMove(Direction direction, Coordinate pos){
     return 0;
 }
 
-bool canSwap(Direction direction, Coordinate){
+/*bool canSwap(Direction direction, Coordinate){
     switch(direction){
         case down:
             return(pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].type == water);
-        case downleft:
+        case downLeft:
             return(pos.y + 1 < GRID_SIZE && pos.x - 1 > 0 && grid[pos.x - 1][pos.y + 1].type == water);
         case downleft:
             return(pos.y + 1 < GRID_SIZE && pos.x + 1 > 0 && grid[pos.x + 1][pos.y + 1].type == water);
     }
-}
+}*/
 
 bool pointInsideRect(Coordinate point, SDL_Rect rectangle){
     return(rectangle.x - rectangle.w/2 < point.x < rectangle.x + rectangle.w/2 && rectangle.y - rectangle.h/2 < point.y < rectangle.y + rectangle.h/2);
