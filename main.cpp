@@ -1,7 +1,6 @@
 #include <iostream>
-#include <random>
-#include <functional>
 #include <cstdlib>
+#include <random>
 
 #define SDL_MAIN_HANDLED
 #define particleToBeUsed water
@@ -189,20 +188,33 @@ void updateGrid() {
 Coordinate sandBehavior(Coordinate pos) {
     Coordinate pos2 = pos;
 
-    if(pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].type == water){
-
+    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
+    bool b = gen();
+    switch(b){
+        case true:
+            if(canMove(down, pos)){
+                pos2.x = pos.x;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downLeft, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downRight, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y + 1;
+            break;
+        case true:
+            if(canMove(down, pos)){
+                pos2.x = pos.x;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downRight, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downLeft, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y + 1;
+            break;
     }
-
-    if(canMove(down, pos)){
-        pos2.x = pos.x;
-        pos2.y = pos.y + 1;
-    } else if(canMove(downLeft, pos)){
-        pos2.x = pos.x - 1;
-        pos2.y = pos.y + 1;
-    } else if(canMove(downRight, pos)){
-        pos2.x = pos.x + 1;
-        pos2.y = pos.y + 1;
-    }
+    
     if (debug == true){
         std::cout << "Moved Particle from (" << pos.x << ", " << pos.y << ") to (" << pos2.x << ", " << pos2.y << ")" << '\n';
     }
@@ -213,21 +225,45 @@ Coordinate sandBehavior(Coordinate pos) {
 Coordinate waterBehavior(Coordinate pos) {
     Coordinate pos2 = pos;
 
-    if(canMove(down, pos)){
-        pos2.x = pos.x;
-        pos2.y = pos.y + 1;
-    } else if(canMove(downLeft, pos)){
-        pos2.x = pos.x - 1;
-        pos2.y = pos.y + 1;
-    } else if(canMove(downRight, pos)){
-        pos2.x = pos.x + 1;
-        pos2.y = pos.y + 1;
-    } else if(canMove(left, pos)){
-        pos2.x = pos.x - 1;
-        pos2.y = pos.y;
-    } else if(canMove(right, pos)){
-        pos2.x = pos.x + 1;
-        pos2.y = pos.y;
+    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
+    bool b = gen();
+    switch(b){
+        case true:
+            if(canMove(down, pos)){
+                pos2.x = pos.x;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downLeft, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downRight, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y + 1;
+            } else if(canMove(left, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y;
+            } else if(canMove(right, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y;
+            }
+            break;
+        case true:
+            if(canMove(down, pos)){
+                pos2.x = pos.x;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downRight, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y + 1;
+            } else if(canMove(downLeft, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y + 1;
+            } else if(canMove(right, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y;
+            } else if(canMove(left, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y;
+            }
+            break;
     }
 
     if (debug == true){
