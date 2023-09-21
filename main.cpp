@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <random>
+#include <functional>
 
 #define SDL_MAIN_HANDLED
 #define particleToBeUsed water
@@ -200,6 +201,7 @@ Coordinate sandBehavior(Coordinate pos) {
             } else if(canMove(downRight, pos)){
                 pos2.x = pos.x + 1;
                 pos2.y = pos.y + 1;
+            }
             break;
         case false:
             if(canMove(down, pos)){
@@ -211,6 +213,7 @@ Coordinate sandBehavior(Coordinate pos) {
             } else if(canMove(downLeft, pos)){
                 pos2.x = pos.x - 1;
                 pos2.y = pos.y + 1;
+            }
             break;
     }
     
