@@ -36,9 +36,6 @@ struct Particle {
     bool isNull;
     bool justMoved;
 
-    
-
-
     Particle(){
         type = none;
         isNull = null;

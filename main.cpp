@@ -121,7 +121,6 @@ void renderGrid() {
 
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             SDL_RenderFillRect(renderer, &particleRect);
-            
         }
     }
 
@@ -202,7 +201,7 @@ Coordinate sandBehavior(Coordinate pos) {
                 pos2.x = pos.x + 1;
                 pos2.y = pos.y + 1;
             break;
-        case true:
+        case false:
             if(canMove(down, pos)){
                 pos2.x = pos.x;
                 pos2.y = pos.y + 1;
@@ -246,7 +245,7 @@ Coordinate waterBehavior(Coordinate pos) {
                 pos2.y = pos.y;
             }
             break;
-        case true:
+        case false:
             if(canMove(down, pos)){
                 pos2.x = pos.x;
                 pos2.y = pos.y + 1;
