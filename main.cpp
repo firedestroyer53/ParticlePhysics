@@ -1,21 +1,17 @@
-#include <iostream>
-#include <cstdlib>
-#include <random>
-#include <functional>
-
 #define SDL_MAIN_HANDLED
-#define particleToBeUsed water
+#define particleToBeUsed steam
 
 #include "main.hpp"
 
-const int GRID_SIZE = 256;
+const int GRID_SIZE = 512;
 Particle grid[GRID_SIZE][GRID_SIZE];
-SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
-const int SCREEN_WIDTH = GRID_SIZE * 4;   
-const int SCREEN_HEIGHT = GRID_SIZE * 4;
+SDL_Window* window = nullptr;
+const int SCREEN_WIDTH = GRID_SIZE;
+const int SCREEN_HEIGHT = GRID_SIZE;
 const int UPDATE_INTERVAL_MS = 0;
-const bool debug = false;
+const bool DEBUG = false;
+
 
 
 int main(int argc, char* argv[]) {
@@ -24,6 +20,12 @@ int main(int argc, char* argv[]) {
     }
 
     initializeGrid();
+    std::vector<double> fpsList;
+    const char* fpsFilePath = "fps_log.txt";
+    const char* particleFilePath = "particle_log.txt";
+    std::vector<int> particleCountList;  // Store particle counts
+    int particleCount = 0;  // Initialize particle count
+
 
     SDL_Event e;
     bool quit = false;
@@ -50,10 +52,54 @@ int main(int argc, char* argv[]) {
         if (elapsedFPSTime >= 1000) {
             double fps = static_cast<double>(frameCount) / (elapsedFPSTime / 1000.0);
             std::cout << "FPS: " << fps << std::endl;
+            if(DEBUG){
+                fpsList.push_back(fps);
+                // Add particle count to the list
+                particleCountList.push_back(particleCount);
+                particleCount = 0;  // Reset particle count
+            }
+          
             lastFPSTime = currentTime;
             frameCount = 0;
         }
+
+        // Update particle count every frame
+        if(DEBUG){
+            int currentParticleCount = countParticles();
+            if(currentParticleCount >= 262144){
+                break;
+            }
+            if (currentParticleCount > particleCount) {
+                particleCount = currentParticleCount;
+            }
+        }
     }
+    // Save FPS values to fps_log.txt
+    if(DEBUG){
+        std::ofstream fpsFile(fpsFilePath);
+        if (fpsFile.is_open()) {
+            for (double fps : fpsList) {
+                fpsFile << fps << std::endl;
+            }
+            fpsFile.close();
+            std::cout << "FPS values saved to " << fpsFilePath << std::endl;
+        } else {
+            std::cerr << "Unable to open " << fpsFilePath << " for writing." << std::endl;
+        }
+
+        // Save particle counts to particle_log.txt
+        std::ofstream particleFile(particleFilePath);
+        if (particleFile.is_open()) {
+            for (int count : particleCountList) {
+                particleFile << count << std::endl;
+            }
+            particleFile.close();
+            std::cout << "Particle counts saved to " << particleFilePath << std::endl;
+        } else {
+            std::cerr << "Unable to open " << particleFilePath << " for writing." << std::endl;
+        }
+    }
+
 
     closeSDL();
     return 0;
@@ -114,7 +160,7 @@ void renderGrid() {
                     color = { 0, 0, 255, 255 }; // Blue for water
                     break;
                 case steam:
-                    color = {33, 13, 2, 255};
+                    color = {255, 0, 0, 255};
                     break;
                 case wall:
                     color = {255, 0, 0, 255};
@@ -137,11 +183,11 @@ void initializeGrid() {
             addParticle(pos, defaultParticle);
         }
     }
-    Particle part(sand);
+    Particle part(wall);
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE; j++){
             if (rand() % 6 == 0) { 
-                addParticle(Coordinate(i, j), part);
+                //addParticle(Coordinate(i, j), part);
             }
         }
     }
@@ -149,7 +195,7 @@ void initializeGrid() {
 
 void updateGrid() {
     Coordinate pos2;
-    for (int i = 0; i < GRID_SIZE; i++) {
+    for (int i = GRID_SIZE-1; i >= 0; i--) {
         for (int j = 0; j < GRID_SIZE - 1; j++) {
             Coordinate pos(i, j);
             if (grid[i][j].isNull) continue;
@@ -182,7 +228,9 @@ void updateGrid() {
         }
     }
     Particle testParticle(particleToBeUsed);
-    addParticle(Coordinate(GRID_SIZE/2, 0), testParticle);
+    for(int i = 0; i < GRID_SIZE; i+=GRID_SIZE/25){
+        addParticle(Coordinate(i,GRID_SIZE-2), testParticle);
+    }
 }
 
 Coordinate sandBehavior(Coordinate pos) {
@@ -217,10 +265,6 @@ Coordinate sandBehavior(Coordinate pos) {
             break;
     }
     
-    if (debug == true){
-        std::cout << "Moved Particle from (" << pos.x << ", " << pos.y << ") to (" << pos2.x << ", " << pos2.y << ")" << '\n';
-    }
-
     return pos2;
 }
 
@@ -268,42 +312,56 @@ Coordinate waterBehavior(Coordinate pos) {
             break;
     }
 
-    if (debug == true){
-        std::cout << "Moved Particle from (" << pos.x << ", " << pos.y << ") to (" << pos2.x << ", " << pos2.y << ")" << '\n';
-    }
-
     return pos2;
 }
 
 Coordinate steamBehavior(Coordinate pos) {
-    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
-    bool b = gen();
+
     Coordinate pos2 = pos;
 
-    if(canMove(up, pos)){
-        pos2.x = pos.x;
-        pos2.y = pos.y - 1;
-    } else if(canMove(upLeft, pos) && b == false){
-        pos2.x = pos.x - 1;
-        pos2.y = pos.y - 1;
-    } else if(canMove(upRight, pos) && b == true){
-        pos2.x = pos.x + 1;
-        pos2.y = pos.y - 1;
-    } else if(canMove(left, pos) && b == false){
-        pos2.x = pos.x - 1;
-        pos2.y = pos.y;
-    } else if(canMove(right, pos) && b == true){
-        pos2.x = pos.x + 1;
-        pos2.y = pos.y;
-    }
-
-    if (debug == true){
-        std::cout << "Moved Particle from (" << pos.x << ", " << pos.y << ") to (" << pos2.x << ", " << pos2.y << ")" << '\n';
+    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
+    bool b = gen();
+    switch(b){
+        case true:
+            if(canMove(up, pos)){
+                pos2.x = pos.x;
+                pos2.y = pos.y - 1;
+            } else if(canMove(upLeft, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y - 1;
+            } else if(canMove(upRight, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y - 1;
+            } else if(canMove(left, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y;
+            } else if(canMove(right, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y;
+            }
+            break;
+        case false:
+            if(canMove(up, pos)){
+                pos2.x = pos.x;
+                pos2.y = pos.y - 1;
+            } else if(canMove(upRight, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y - 1;
+            } else if(canMove(upLeft, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y - 1;
+            } else if(canMove(right, pos)){
+                pos2.x = pos.x + 1;
+                pos2.y = pos.y;
+            } else if(canMove(left, pos)){
+                pos2.x = pos.x - 1;
+                pos2.y = pos.y;
+            }
+            break;
     }
 
     return pos2;
 }
-
 
 void removeParticle(Coordinate pos) {
     grid[pos.x][pos.y].isNull = true;
@@ -350,17 +408,29 @@ bool canMove(Direction direction, Coordinate pos){
     return 0;
 }
 
-/*bool canSwap(Direction direction, Coordinate){
+bool canSwap(Direction direction, Coordinate pos){
     switch(direction){
         case down:
             return(pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].type == water);
         case downLeft:
             return(pos.y + 1 < GRID_SIZE && pos.x - 1 > 0 && grid[pos.x - 1][pos.y + 1].type == water);
-        case downleft:
+        case downRight:
             return(pos.y + 1 < GRID_SIZE && pos.x + 1 > 0 && grid[pos.x + 1][pos.y + 1].type == water);
     }
-}*/
+}
 
 bool pointInsideRect(Coordinate point, SDL_Rect rectangle){
     return(rectangle.x - rectangle.w/2 < point.x < rectangle.x + rectangle.w/2 && rectangle.y - rectangle.h/2 < point.y < rectangle.y + rectangle.h/2);
+}
+
+int countParticles() {
+    int count = 0;
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (!grid[i][j].isNull) {
+                count++;
+            }
+        }
+    }
+    return count;
 }

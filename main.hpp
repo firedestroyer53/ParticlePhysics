@@ -3,9 +3,15 @@
 
 #endif //PARTICLEPHYSICS_MAIN_HPP
 
-#define null true
 
+#include <iostream>
+#include <cstdlib>
+#include <random>
+#include <functional>
+#include <fstream>
+#include <vector>
 #include <SDL2/SDL.h>
+
 
 enum particleType {
     none, sand, water, steam, wall
@@ -38,17 +44,18 @@ struct Particle {
 
     Particle(){
         type = none;
-        isNull = null;
+        isNull = true;
         justMoved = false;
     }
 
     Particle(particleType pType){
         type = pType;
-        isNull = !null;
+        isNull = false;
         justMoved = false;
     }
 };
 
+int countParticles();
 
 bool initializeSDL();
 
@@ -79,5 +86,7 @@ Coordinate steamBehavior(Coordinate pos);
 Coordinate wallBehavior(Coordinate pos);
 
 bool canMove(Direction direction, Coordinate pos);
+
+bool canSwap(Direction direction, Coordinate pos);
 
 bool pointInsideRect(Coordinate point, SDL_Rect rectangle);
