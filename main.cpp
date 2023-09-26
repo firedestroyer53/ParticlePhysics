@@ -1,14 +1,14 @@
 #define SDL_MAIN_HANDLED
-#define particleToBeUsed steam
+#define particleToBeUsed sand
 
 #include "main.hpp"
 
-const int GRID_SIZE = 512;
+const int GRID_SIZE = 256;
 Particle grid[GRID_SIZE][GRID_SIZE];
 SDL_Renderer* renderer = nullptr;
 SDL_Window* window = nullptr;
-const int SCREEN_WIDTH = GRID_SIZE;
-const int SCREEN_HEIGHT = GRID_SIZE;
+const int SCREEN_WIDTH = GRID_SIZE * 4;
+const int SCREEN_HEIGHT = GRID_SIZE * 4;
 const int UPDATE_INTERVAL_MS = 0;
 const bool DEBUG = false;
 
@@ -175,6 +175,10 @@ void renderGrid() {
     SDL_RenderPresent(renderer);
 }
 
+void handleMouse() {
+
+}
+
 void initializeGrid() {
     Particle defaultParticle;
     for (int i = 0; i < GRID_SIZE; i++) {
@@ -228,8 +232,8 @@ void updateGrid() {
         }
     }
     Particle testParticle(particleToBeUsed);
-    for(int i = 0; i < GRID_SIZE; i+=GRID_SIZE/25){
-        addParticle(Coordinate(i,GRID_SIZE-2), testParticle);
+    for(int i = 0; i < GRID_SIZE; i+=GRID_SIZE/5){
+        grid[i][0] = testParticle;
     }
 }
 
