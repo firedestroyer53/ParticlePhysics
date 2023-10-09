@@ -1,3 +1,7 @@
+#include <iostream>
+#include <cstdlib>
+#include <random>
+
 #define SDL_MAIN_HANDLED
 #define particleToBeUsed sand
 
@@ -271,6 +275,7 @@ Coordinate sandBehavior(Coordinate pos) {
     
     return pos2;
 }
+
 
 Coordinate waterBehavior(Coordinate pos) {
     Coordinate pos2 = pos;

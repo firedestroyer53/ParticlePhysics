@@ -3,15 +3,9 @@
 
 #endif //PARTICLEPHYSICS_MAIN_HPP
 
+#define null true
 
-#include <iostream>
-#include <cstdlib>
-#include <random>
-#include <functional>
-#include <fstream>
-#include <vector>
 #include <SDL2/SDL.h>
-
 
 enum particleType {
     none, sand, water, steam, wall
