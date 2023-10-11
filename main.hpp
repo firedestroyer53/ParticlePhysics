@@ -21,16 +21,16 @@ enum Direction{
     up, down, left, right, upLeft, upRight, downLeft, downRight
 };
 
-struct Coordinate {
+struct Vector2 {
     int x;
     int y;
 
-    Coordinate(int i, int j) {
+    Vector2(int i, int j) {
         x = i;
         y = j;
     }
 
-    Coordinate() {
+    Vector2() {
         x = 0;
         y = 0;
     }
@@ -42,16 +42,33 @@ struct Particle {
     bool isNull;
     bool justMoved;
 
+    double density;
+
     Particle(){
         type = none;
         isNull = true;
         justMoved = false;
+        density = 0.0d;
     }
 
     Particle(particleType pType){
         type = pType;
         isNull = false;
         justMoved = false;
+        switch(type){
+            case none:
+                density = 0;
+                break;
+            case sand:
+                density = 1.52;
+                break;
+            case water:
+                density = 1;
+                break;
+            case steam:
+                density = 0.000598;
+                break;
+        }
     }
 };
 
@@ -61,32 +78,32 @@ bool initializeSDL();
 
 void closeSDL();
 
-void renderGrid();
+void renderParticle(Vector2 pos, Particle particle);
 
-void handleMouse();
+void handleMouse(int mouseX, int mouseY);
 
 void initializeGrid();
 
 void updateGrid();
 
-void removeParticle(Coordinate pos);
+void removeParticle(Vector2 pos);
 
-void addParticle(Coordinate pos, Particle particle);
+void addParticle(Vector2 pos, Particle particle);
 
-void moveParticle(Coordinate pos1, Coordinate pos2, Particle particle);
+void moveParticle(Vector2 pos1, Vector2 pos2, Particle particle);
 
-void swapParticle(Coordinate pos1, Coordinate pos2);
+void swapParticle(Vector2 pos1, Vector2 pos2);
 
-Coordinate sandBehavior(Coordinate pos);
+Vector2 sandBehavior(Vector2 pos);
 
-Coordinate waterBehavior(Coordinate pos);
+Vector2 waterBehavior(Vector2 pos);
 
-Coordinate steamBehavior(Coordinate pos);
+Vector2 steamBehavior(Vector2 pos);
 
-Coordinate wallBehavior(Coordinate pos);
+Vector2 wallBehavior(Vector2 pos);
 
-bool canMove(Direction direction, Coordinate pos);
+bool canMove(Direction direction, Vector2 pos);
 
-bool canSwap(Direction direction, Coordinate pos);
+bool canSwap(Direction direction, Vector2 pos);
 
-bool pointInsideRect(Coordinate point, SDL_Rect rectangle);
+bool pointInsideRect(Vector2 point, SDL_Rect rectangle);
