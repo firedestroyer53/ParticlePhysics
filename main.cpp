@@ -1,29 +1,33 @@
 #define SDL_MAIN_HANDLED
-#define particleToBeUsed water
 
 #include "main.hpp"
 
 const int GRID_SIZE = 512;
+
+const int NUM_THREADS = 6;
+std::vector<std::thread> threads;
+const int rowsPerThread = GRID_SIZE / NUM_THREADS;
+
 Particle grid[GRID_SIZE][GRID_SIZE];
-SDL_Renderer* renderer = nullptr;
-SDL_Window* window = nullptr;
-const int SCREEN_WIDTH = GRID_SIZE * 2;
-const int SCREEN_HEIGHT = GRID_SIZE * 2;
+SDL_Renderer * renderer = nullptr;
+SDL_Window * window = nullptr;
+const int SCREEN_WIDTH = GRID_SIZE;
+const int SCREEN_HEIGHT = GRID_SIZE;
 const double UPDATE_INTERVAL_MS = 0;
 const bool DEBUG = false;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char * argv[]) {
     if (!initializeSDL()) {
         return 1;
     }
 
     initializeGrid();
 
-    std::vector<double> fpsList;
-    const char* fpsFilePath = "fps_log.txt";
-    const char* particleFilePath = "particle_log.txt";
-    std::vector<int> particleCountList;  // Store particle counts
-    int particleCount = 0;  // Initialize particle count
+    std::vector < double > fpsList;
+    const char * fpsFilePath = "fps_log.txt";
+    const char * particleFilePath = "particle_log.txt";
+    std::vector < int > particleCountList; // Store particle counts
+    int particleCount = 0; // Initialize particle count
 
     SDL_Event e;
     bool quit = false;
@@ -33,40 +37,43 @@ int main(int argc, char* argv[]) {
 
     bool clicked = false;
 
+
     while (!quit) {
-        while (SDL_PollEvent(&e)) {
+        while (SDL_PollEvent( & e)) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             }
         }
 
+        
+
         Uint32 currentTime = SDL_GetTicks();
         if (currentTime - lastUpdateTime >= UPDATE_INTERVAL_MS) {
             lastUpdateTime = currentTime;
             updateGrid();
-            SDL_RenderPresent(renderer);
+            renderGrid();
             frameCount++;
         }
 
         Uint32 elapsedFPSTime = currentTime - lastFPSTime;
         if (elapsedFPSTime >= 1000) {
-            double fps = static_cast<double>(frameCount) / (elapsedFPSTime / 1000.0);
+            double fps = static_cast < double > (frameCount) / (elapsedFPSTime / 1000.0);
             std::cout << "FPS: " << fps << std::endl;
-            if(DEBUG){
+            if (DEBUG) {
                 fpsList.push_back(fps);
                 // Add particle count to the list
                 particleCountList.push_back(particleCount);
-                particleCount = 0;  // Reset particle count
+                particleCount = 0; // Reset particle count
             }
-          
+
             lastFPSTime = currentTime;
             frameCount = 0;
         }
 
         // Update particle count every frame
-        if(DEBUG){
+        if (DEBUG) {
             int currentParticleCount = countParticles();
-            if(currentParticleCount >= 262144){
+            if (currentParticleCount >= 262144) {
                 break;
             }
             if (currentParticleCount > particleCount) {
@@ -75,10 +82,10 @@ int main(int argc, char* argv[]) {
         }
     }
     // Save FPS values to fps_log.txt
-    if(DEBUG){
+    if (DEBUG) {
         std::ofstream fpsFile(fpsFilePath);
         if (fpsFile.is_open()) {
-            for (double fps : fpsList) {
+            for (double fps: fpsList) {
                 fpsFile << fps << std::endl;
             }
             fpsFile.close();
@@ -90,7 +97,7 @@ int main(int argc, char* argv[]) {
         // Save particle counts to particle_log.txt
         std::ofstream particleFile(particleFilePath);
         if (particleFile.is_open()) {
-            for (int count : particleCountList) {
+            for (int count: particleCountList) {
                 particleFile << count << std::endl;
             }
             particleFile.close();
@@ -99,7 +106,6 @@ int main(int argc, char* argv[]) {
             std::cerr << "Unable to open " << particleFilePath << " for writing." << std::endl;
         }
     }
-
 
     closeSDL();
     return 0;
@@ -132,35 +138,46 @@ void closeSDL() {
     SDL_Quit();
 }
 
-void renderParticle(Vector2 pos, Particle particle) {
-    SDL_Rect particleRect;
+void renderGrid() {
+    // Clear the screen
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
 
-    particleRect.x = pos.x * (SCREEN_WIDTH / GRID_SIZE);
-    particleRect.y = pos.y * (SCREEN_HEIGHT / GRID_SIZE);
-    particleRect.w = SCREEN_WIDTH / GRID_SIZE;
-    particleRect.h = SCREEN_HEIGHT / GRID_SIZE;
+    // Render each particle as a rectangle
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            if (!grid[i][j].isNull) {
+                SDL_Rect particleRect;
+                particleRect.x = i * (SCREEN_WIDTH / GRID_SIZE);
+                particleRect.y = j * (SCREEN_HEIGHT / GRID_SIZE);
+                particleRect.w = SCREEN_WIDTH / GRID_SIZE;
+                particleRect.h = SCREEN_HEIGHT / GRID_SIZE;
 
-    // Set color based on particle type
-    SDL_Color color;
-    switch (particle.type) {
-        case none:
-            color = { 0, 0, 0, 255 }; // Black for none
-            break;
-        case sand:
-            color = { 255, 255, 0, 255 }; // Yellow for sand
-            break;
-        case water:
-            color = { 0, 0, 255, 255 }; // Blue for water
-            break;
-        case steam:
-            color = { 255, 0, 0, 255 };
-            break;
-        case wall:
-            color = { 255, 0, 0, 255 };
+                // Set color based on particle type
+                SDL_Color color;
+                switch (grid[i][j].type) {
+                    case none:
+                        color = { 0, 0, 0, 255 }; // Black for none
+                        break;
+                    case sand:
+                        color = { 255, 255, 0, 255 }; // Yellow for sand
+                        break;
+                    case water:
+                        color = { 0, 0, 255, 255 }; // Blue for water
+                        break;
+                    case steam:
+                        color = {33, 13, 2, 255};
+                        break;
+                }
+
+                SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+                SDL_RenderFillRect(renderer, &particleRect);
+            }
+        }
     }
 
-    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-    SDL_RenderFillRect(renderer, &particleRect);
+    // Update the screen
+    SDL_RenderPresent(renderer);
 }
 
 void initializeGrid() {
@@ -183,49 +200,61 @@ void initializeGrid() {
     */
 }
 
-void updateGrid() {
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-
-    Vector2 pos2;
-    for (int i = GRID_SIZE-1; i >= 0; i--) {
+void updateGridSection(int startRow, int endRow) {
+    for (int i = startRow; i < endRow; i++) {
         for (int j = 0; j < GRID_SIZE - 1; j++) {
             Vector2 pos(i, j);
-            if (grid[i][j].isNull) continue;
-            switch (grid[i][j].type) {
-                case none:
-                    break;
-                case sand:
-                    pos2 = sandBehavior(pos);
-                    break;
-                case water:
-                    pos2 = waterBehavior(pos);
-                    break;
-                case steam:
-                    pos2 = steamBehavior(pos);
-                    break;
-                case wall:
-                    pos2 = pos;
-                    break;
+            Vector2 pos2;
+            Particle p = grid[i][j];
+            if (p.isNull) continue;
+            if (p.justMoved) continue;
+            switch (p.type) {
+            case none:
+                break;
+            case sand:
+                pos2 = sandBehavior(pos);
+                break;
+            case water:
+                pos2 = waterBehavior(pos);
+                break;
+            case steam:
+                pos2 = steamBehavior(pos);
+                break;
+            case wall:
+                pos2 = pos;
+                break;
             }
-            if (grid[pos.x][pos.y].justMoved) continue;
-            moveParticle(pos, pos2, grid[pos.x][pos.y]);
+            moveParticle(pos, pos2, p);
             grid[pos2.x][pos2.y].justMoved = true;
-            renderParticle(pos2, grid[pos2.x][pos2.y]);
         }
     }
+}
+
+void updateGrid() {
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        int startRow = i * rowsPerThread;
+        int endRow = (i + 1) * rowsPerThread;
+        threads.push_back(std::thread(updateGridSection, startRow, endRow));
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    threads.clear();
+    
     for (int i = 0; i < GRID_SIZE; i++) {
         for (int j = 0; j < GRID_SIZE - 1; j++) {
             if (grid[i][j].isNull) continue;
             grid[i][j].justMoved = false;
         }
     }
-    Particle testParticle(particleToBeUsed);
+
+    Particle testParticle1(water);
     Particle testParticle2(sand);
     int j = 0;
-    for(int i = 0; i < GRID_SIZE; i+=GRID_SIZE/25){
-        if(j % 1 == 0) grid[i][0] = testParticle;
+    for (int i = 0; i < GRID_SIZE; i += GRID_SIZE / 25) {
+        if (j % 2 == 0) grid[i][0] = testParticle1;
         else grid[i][0] = testParticle2;
         j++;
     }
@@ -234,33 +263,15 @@ void updateGrid() {
 Vector2 sandBehavior(Vector2 pos) {
     Vector2 pos2 = pos;
 
-    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
-    bool b = gen();
-    switch(b){
-        case true:
-            if(canMove(down, pos)){
-                pos2.x = pos.x;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downLeft, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downRight, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y + 1;
-            }
-            break;
-        case false:
-            if(canMove(down, pos)){
-                pos2.x = pos.x;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downRight, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downLeft, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y + 1;
-            }
-            break;
+    if (canMove(down, pos)) {
+        pos2.x = pos.x;
+        pos2.y = pos.y + 1;
+    } else if (canMove(downLeft, pos)) {
+        pos2.x = pos.x - 1;
+        pos2.y = pos.y + 1;
+    } else if (canMove(downRight, pos)) {
+        pos2.x = pos.x + 1;
+        pos2.y = pos.y + 1;
     }
 
     return pos2;
@@ -269,47 +280,22 @@ Vector2 sandBehavior(Vector2 pos) {
 Vector2 waterBehavior(Vector2 pos) {
     Vector2 pos2 = pos;
 
-    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
-    bool b = gen();
-    switch(b){
-        case true:
-            if(canMove(down, pos)){
-                pos2.x = pos.x;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downLeft, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downRight, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y + 1;
-            } else if(canMove(left, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y;
-            } else if(canMove(right, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y;
-            }
-            break;
-        case false:
-            if(canMove(down, pos)){
-                pos2.x = pos.x;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downRight, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y + 1;
-            } else if(canMove(downLeft, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y + 1;
-            } else if(canMove(right, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y;
-            } else if(canMove(left, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y;
-            }
-            break;
+    if (canMove(down, pos)) {
+        pos2.x = pos.x;
+        pos2.y = pos.y + 1;
+    } else if (canMove(downLeft, pos)) {
+        pos2.x = pos.x - 1;
+        pos2.y = pos.y + 1;
+    } else if (canMove(downRight, pos)) {
+        pos2.x = pos.x + 1;
+        pos2.y = pos.y + 1;
+    } else if (canMove(left, pos)) {
+        pos2.x = pos.x - 1;
+        pos2.y = pos.y;
+    } else if (canMove(right, pos)) {
+        pos2.x = pos.x + 1;
+        pos2.y = pos.y;
     }
-
     return pos2;
 }
 
@@ -317,47 +303,22 @@ Vector2 steamBehavior(Vector2 pos) {
 
     Vector2 pos2 = pos;
 
-    auto gen = std::bind(std::uniform_int_distribution<>(0,1),std::default_random_engine());
-    bool b = gen();
-    switch(b){
-        case true:
-            if(canMove(up, pos)){
-                pos2.x = pos.x;
-                pos2.y = pos.y - 1;
-            } else if(canMove(upLeft, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y - 1;
-            } else if(canMove(upRight, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y - 1;
-            } else if(canMove(left, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y;
-            } else if(canMove(right, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y;
-            }
-            break;
-        case false:
-            if(canMove(up, pos)){
-                pos2.x = pos.x;
-                pos2.y = pos.y - 1;
-            } else if(canMove(upRight, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y - 1;
-            } else if(canMove(upLeft, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y - 1;
-            } else if(canMove(right, pos)){
-                pos2.x = pos.x + 1;
-                pos2.y = pos.y;
-            } else if(canMove(left, pos)){
-                pos2.x = pos.x - 1;
-                pos2.y = pos.y;
-            }
-            break;
+    if (canMove(up, pos)) {
+        pos2.x = pos.x;
+        pos2.y = pos.y - 1;
+    } else if (canMove(upLeft, pos)) {
+        pos2.x = pos.x - 1;
+        pos2.y = pos.y - 1;
+    } else if (canMove(upRight, pos)) {
+        pos2.x = pos.x + 1;
+        pos2.y = pos.y - 1;
+    } else if (canMove(left, pos)) {
+        pos2.x = pos.x - 1;
+        pos2.y = pos.y;
+    } else if (canMove(right, pos)) {
+        pos2.x = pos.x + 1;
+        pos2.y = pos.y;
     }
-
     return pos2;
 }
 
@@ -385,29 +346,29 @@ void swapParticle(Vector2 pos1, Vector2 pos2) {
 }
 
 bool canMove(Direction direction, Vector2 pos) {
-    switch(direction){
-        case up:
-            return(pos.y - 1 >= 0 && grid[pos.x][pos.y - 1].isNull);
-        case down:
-            return(pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].isNull);
-        case left:
-            return(pos.x - 1 >= 0 && grid[pos.x - 1][pos.y].isNull);
-        case right:
-            return(pos.x + 1 < GRID_SIZE && grid[pos.x + 1][pos.y].isNull);
-        case upLeft:
-            return(pos.x - 1 >= 0 && pos.y - 1 >= 0 && grid[pos.x -1][pos.y - 1].isNull);
-        case upRight:
-            return(pos.x + 1 < GRID_SIZE && pos.y - 1 >= 0 && grid[pos.x + 1][pos.y - 1].isNull);
-        case downLeft:
-            return(pos.x - 1 >= 0 && pos.y + 1 < GRID_SIZE && grid[pos.x - 1][pos.y + 1].isNull);
-        case downRight:
-            return(pos.x + 1 < GRID_SIZE && pos.y + 1 < GRID_SIZE && grid[pos.x + 1][pos.y + 1].isNull);
+    switch (direction) {
+    case up:
+        return (pos.y - 1 >= 0 && grid[pos.x][pos.y - 1].isNull);
+    case down:
+        return (pos.y + 1 < GRID_SIZE && grid[pos.x][pos.y + 1].isNull);
+    case left:
+        return (pos.x - 1 >= 0 && grid[pos.x - 1][pos.y].isNull);
+    case right:
+        return (pos.x + 1 < GRID_SIZE && grid[pos.x + 1][pos.y].isNull);
+    case upLeft:
+        return (pos.x - 1 >= 0 && pos.y - 1 >= 0 && grid[pos.x - 1][pos.y - 1].isNull);
+    case upRight:
+        return (pos.x + 1 < GRID_SIZE && pos.y - 1 >= 0 && grid[pos.x + 1][pos.y - 1].isNull);
+    case downLeft:
+        return (pos.x - 1 >= 0 && pos.y + 1 < GRID_SIZE && grid[pos.x - 1][pos.y + 1].isNull);
+    case downRight:
+        return (pos.x + 1 < GRID_SIZE && pos.y + 1 < GRID_SIZE && grid[pos.x + 1][pos.y + 1].isNull);
     }
     return 0;
 }
 
 bool pointInsideRect(Vector2 point, SDL_Rect rectangle) {
-    return(rectangle.x - rectangle.w/2 < point.x < rectangle.x + rectangle.w/2 && rectangle.y - rectangle.h/2 < point.y < rectangle.y + rectangle.h/2);
+    return (rectangle.x - rectangle.w / 2 < point.x < rectangle.x + rectangle.w / 2 && rectangle.y - rectangle.h / 2 < point.y < rectangle.y + rectangle.h / 2);
 }
 
 int countParticles() {

@@ -11,6 +11,7 @@
 #include <random>
 #include <iostream>
 #include <fstream>
+#include <thread>
 
 enum particleType {
     none, sand, water, steam, wall
@@ -84,6 +85,8 @@ void handleMouse(int mouseX, int mouseY);
 void initializeGrid();
 
 void updateGrid();
+
+void renderGrid();
 
 void removeParticle(Vector2 pos);
 
