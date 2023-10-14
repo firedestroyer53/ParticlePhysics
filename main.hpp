@@ -6,6 +6,11 @@
 #define null true
 
 #include <SDL2/SDL.h>
+#include <cstdio>
+#include <functional>
+#include <random>
+#include <iostream>
+#include <fstream>
 
 enum particleType {
     none, sand, water, steam, wall
