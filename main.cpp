@@ -10,7 +10,7 @@ SDL_Window* window = nullptr;
 const int SCREEN_WIDTH = GRID_SIZE * 2;
 const int SCREEN_HEIGHT = GRID_SIZE * 2;
 const double UPDATE_INTERVAL_MS = 0;
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 int main(int argc, char* argv[]) {
     if (!initializeSDL()) {
